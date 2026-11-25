@@ -6,6 +6,7 @@ import express from 'express'
 import helmet from 'helmet'
 import { z } from 'zod'
 import {
+  createCalendar,
   createCalendarEvent,
   deleteCalendarEvent,
   createClientFolder,
@@ -14,6 +15,7 @@ import {
   googleIdentity,
   googleScopes,
   listCalendarEvents,
+  listCalendars,
   listDriveFiles,
   oauthClient,
   saveAuthorization,
@@ -179,17 +181,38 @@ app.delete('/api/google/connection', async (_req, res) => {
   res.status(204).end()
 })
 
+const calendarIdSchema = z.string().regex(/^[a-zA-Z0-9._+@#%\-]{1,1024}$/)
+  .refine((id) => id !== '.' && id !== '..').default('primary')
+
+app.get('/api/calendar/calendars', async (_req, res, next) => {
+  try { res.json(await listCalendars(store)) }
+  catch (error) { next(error) }
+})
+
+app.post('/api/calendar/calendars', async (req, res, next) => {
+  try {
+    const input = z.object({
+      name: z.string().trim().min(1).max(255),
+      timeZone: z.string().max(100).refine((value) => {
+        try { new Intl.DateTimeFormat('en', { timeZone: value }); return true }
+        catch { return false }
+      }).default('UTC'),
+    }).parse(req.body)
+    res.status(201).json(await createCalendar(store, input.name, input.timeZone))
+  } catch (error) { next(error) }
+})
+
 app.get('/api/calendar/events', async (req, res, next) => {
   try {
     const range = z.object({ timeMin: z.string().datetime(), timeMax: z.string().datetime() }).parse(req.query)
-    res.json(await listCalendarEvents(store, range.timeMin, range.timeMax))
+    res.json(await listCalendarEvents(store, range.timeMin, range.timeMax, calendarIdSchema.parse(req.query.calendarId)))
   } catch (error) { next(error) }
 })
 
 app.post('/api/calendar/events', async (req, res, next) => {
   try {
     const input = z.object({ title: z.string().min(1), start: z.string().datetime(), end: z.string().datetime(), description: z.string().optional(), location: z.string().optional(), attendees: z.array(z.string().email()).optional() }).parse(req.body)
-    res.status(201).json(await createCalendarEvent(store, input))
+    res.status(201).json(await createCalendarEvent(store, input, calendarIdSchema.parse(req.query.calendarId)))
   } catch (error) { next(error) }
 })
 
@@ -203,12 +226,12 @@ const calendarEventSchema = z.object({
 })
 
 app.patch('/api/calendar/events/:id', async (req, res, next) => {
-  try { res.json(await updateCalendarEvent(store, req.params.id, calendarEventSchema.parse(req.body))) }
+  try { res.json(await updateCalendarEvent(store, req.params.id, calendarEventSchema.parse(req.body), calendarIdSchema.parse(req.query.calendarId))) }
   catch (error) { next(error) }
 })
 
 app.delete('/api/calendar/events/:id', async (req, res, next) => {
-  try { await deleteCalendarEvent(store, req.params.id); res.status(204).end() }
+  try { await deleteCalendarEvent(store, req.params.id, calendarIdSchema.parse(req.query.calendarId)); res.status(204).end() }
   catch (error) { next(error) }
 })
 

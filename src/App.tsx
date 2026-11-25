@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import {
   Building2, CalendarDays, Check, ChevronRight, ExternalLink, FileText, FolderOpen,
   LayoutDashboard, LogOut, Menu, Plus, Search, Settings, UsersRound, X,
@@ -18,6 +18,7 @@ const routes: { id: Route; label: string; icon: typeof LayoutDashboard }[] = [
 ]
 
 const basePath = '/optimize/back-office'
+const mobileNavigationQuery = '(max-width: 940px)'
 const routePath = (route: Route) => route === 'dashboard' ? `${basePath}/` : `${basePath}/${route}`
 
 const routeFromLocation = (): Route => {
@@ -30,8 +31,13 @@ function App() {
   const [session, setSession] = useState<{ authenticated: boolean; email?: string | null } | null>(null)
   const [platform, setPlatform] = useState<Platform | null>(null)
   const [route, setRoute] = useState<Route>(routeFromLocation())
+  const [isMobile, setIsMobile] = useState(() => matchMedia(mobileNavigationQuery).matches)
+  const [desktopOpen, setDesktopOpen] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [error, setError] = useState('')
+  const menuButton = useRef<HTMLButtonElement>(null)
+  const closeButton = useRef<HTMLButtonElement>(null)
+  const sidebarOpen = isMobile ? mobileOpen : desktopOpen
 
   const load = async () => {
     const nextSession = await api<{ authenticated: boolean; email?: string | null }>('/auth/session')
@@ -41,15 +47,50 @@ function App() {
 
   useEffect(() => { load().catch((err) => setError(err.message)) }, [])
   useEffect(() => {
-    const handle = () => setRoute(routeFromLocation())
+    const handle = () => {
+      setRoute(routeFromLocation())
+      setMobileOpen(false)
+    }
     addEventListener('popstate', handle)
     return () => removeEventListener('popstate', handle)
   }, [])
 
+  useEffect(() => {
+    const viewport = matchMedia(mobileNavigationQuery)
+    const update = () => {
+      setIsMobile(viewport.matches)
+      setMobileOpen(false)
+    }
+    viewport.addEventListener('change', update)
+    return () => viewport.removeEventListener('change', update)
+  }, [])
+
+  useEffect(() => {
+    if (!isMobile || !mobileOpen) return
+    closeButton.current?.focus()
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      setMobileOpen(false)
+      menuButton.current?.focus()
+    }
+    addEventListener('keydown', closeOnEscape)
+    return () => removeEventListener('keydown', closeOnEscape)
+  }, [isMobile, mobileOpen])
+
+  const closeMobileNavigation = () => {
+    setMobileOpen(false)
+    menuButton.current?.focus()
+  }
+
+  const toggleNavigation = () => {
+    if (isMobile) setMobileOpen((open) => !open)
+    else setDesktopOpen((open) => !open)
+  }
+
   const navigate = (next: Route) => {
     history.pushState({}, '', routePath(next))
     setRoute(next)
-    setMobileOpen(false)
+    if (isMobile && mobileOpen) closeMobileNavigation()
   }
 
   if (!session && error) return <div className="splash"><div className="brand-mark">BLH</div><h2>Can’t reach the back office</h2><p>{error}</p><p>For local development, start the app with <code>npm run dev</code>, then open <code>http://localhost:5173/optimize/back-office/</code>.</p><button className="button primary" onClick={() => { setError(''); load().catch((err) => setError(err.message)) }}>Try again</button></div>
@@ -67,9 +108,9 @@ function App() {
   } as React.CSSProperties
 
   return (
-    <div className="app admin-shell" style={themeStyle}>
-      <aside className={mobileOpen ? 'sidebar admin-sidebar open' : 'sidebar admin-sidebar'}>
-        <button className="mobile-close" type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)}><X /></button>
+    <div className={desktopOpen ? 'app admin-shell' : 'app admin-shell admin-shell--collapsed'} style={themeStyle}>
+      <aside id="back-office-sidebar" className="sidebar admin-sidebar" hidden={!sidebarOpen} aria-label="Back-office navigation">
+        <button ref={closeButton} className="admin-sidebar__close" type="button" aria-label="Close navigation" onClick={closeMobileNavigation}><X size={18} /></button>
         <div className="brand admin-brand"><AdminMark /><div><strong className="admin-brand__name">{platform.theme.brandName}</strong><span className="admin-brand__sub">Owner back office · BLH Labs</span></div></div>
         <nav className="admin-nav"><span className="admin-nav__label">Workspace</span>{routes.map(({ id, label, icon: Icon }) => <button key={id} className={route === id ? 'admin-nav__link active' : 'admin-nav__link'} onClick={() => navigate(id)}><Icon size={16} />{label}</button>)}</nav>
         <div className="admin-sidebar__foot">
@@ -79,9 +120,16 @@ function App() {
           <div className="sidebar-foot admin-user"><span className="admin-user__avatar">BLH</span><div><strong className="admin-user__name">Administrator</strong><span className="admin-user__meta">{session.email}</span></div><button className="admin-user__logout" title="Sign out" onClick={async () => { await api('/auth/logout', { method: 'POST' }); location.href = routePath('dashboard') }}><LogOut size={15} /></button></div>
         </div>
       </aside>
-      {mobileOpen && <button className="scrim" type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />}
+      {isMobile && mobileOpen && <div className="admin-sidebar-scrim" aria-hidden="true" onClick={closeMobileNavigation} />}
       <main className="admin-main">
-        <header className="admin-topbar"><button className="mobile-menu" type="button" aria-label="Open navigation" onClick={() => setMobileOpen(true)}><Menu /></button><div className="admin-crumbs"><span>BLH Labs</span><span>/</span><span>{platform.theme.brandName}</span><span>/</span><strong>{routes.find((item) => item.id === route)?.label}</strong></div><div className="admin-topbar__actions"><span className="demo-context">Demo customer #BLH-0001</span><LiveBadge connected={platform.google.connected} /></div></header>
+        <header className="admin-topbar">
+          <div className="admin-topbar__navigation">
+            <button ref={menuButton} className="admin-menu-toggle" type="button" aria-label={sidebarOpen ? 'Hide navigation' : 'Show navigation'}
+              aria-controls="back-office-sidebar" aria-expanded={sidebarOpen} onClick={toggleNavigation}><Menu size={20} /></button>
+            <div className="admin-crumbs"><span>BLH Labs</span><span>/</span><span>{platform.theme.brandName}</span><span>/</span><strong>{routes.find((item) => item.id === route)?.label}</strong></div>
+          </div>
+          <div className="admin-topbar__actions"><span className="demo-context">Demo customer #BLH-0001</span><LiveBadge connected={platform.google.connected} /></div>
+        </header>
         {error && <div className="notice error">{error}<button onClick={() => setError('')}><X size={15} /></button></div>}
         <div className="content admin-content">
           {route !== 'dashboard' && route !== 'clients' && route !== 'calendar' && <div className="admin-pagehead"><div><h1>{pageTitle(route)}</h1><p className="admin-pagehead__sub">{pageSubtitle(route, platform.google.connected)}</p></div></div>}

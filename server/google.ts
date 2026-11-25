@@ -47,17 +47,45 @@ export async function googleIdentity(store: Store) {
   return { email: data.email, name: data.name }
 }
 
-export async function listCalendarEvents(store: Store, timeMin: string, timeMax: string) {
+export async function listCalendars(store: Store) {
   const calendar = google.calendar({ version: 'v3', auth: connectedClient(store) })
-  const { data } = await calendar.events.list({
-    calendarId: 'primary',
-    timeMin,
-    timeMax,
-    singleEvents: true,
-    orderBy: 'startTime',
-    maxResults: 100,
-  })
-  return (data.items || []).map((event) => ({
+  const calendars: Array<{ id: string; name: string; primary: boolean; writable: boolean }> = []
+  let pageToken: string | undefined
+  do {
+    const { data } = await calendar.calendarList.list({ minAccessRole: 'reader', maxResults: 250, pageToken })
+    for (const item of data.items ?? []) {
+      if (!item.id) continue
+      calendars.push({
+        id: item.id,
+        name: item.summaryOverride ?? item.summary ?? item.id,
+        primary: item.primary === true,
+        writable: ['owner', 'writer', 'writerWithoutPrivateAccess'].includes(item.accessRole ?? ''),
+      })
+    }
+    pageToken = data.nextPageToken ?? undefined
+  } while (pageToken)
+  return calendars
+}
+
+export async function createCalendar(store: Store, name: string, timeZone: string) {
+  const calendar = google.calendar({ version: 'v3', auth: connectedClient(store) })
+  const { data } = await calendar.calendars.insert({ requestBody: { summary: name, timeZone } })
+  if (!data.id) throw new Error('Google did not return a calendar ID')
+  return { id: data.id, name: data.summary ?? name, primary: false, writable: true }
+}
+
+export async function listCalendarEvents(store: Store, timeMin: string, timeMax: string, calendarId = 'primary') {
+  const calendar = google.calendar({ version: 'v3', auth: connectedClient(store) })
+  const events = []
+  let pageToken: string | undefined
+  do {
+    const { data } = await calendar.events.list({
+      calendarId, timeMin, timeMax, singleEvents: true, orderBy: 'startTime', maxResults: 250, pageToken,
+    })
+    events.push(...(data.items ?? []))
+    pageToken = data.nextPageToken ?? undefined
+  } while (pageToken)
+  return events.map((event) => ({
     id: event.id,
     title: event.summary || '(Untitled)',
     start: event.start?.dateTime || event.start?.date,
@@ -75,10 +103,10 @@ export async function updateCalendarEvent(store: Store, eventId: string, input: 
   description?: string
   location?: string
   attendees?: string[]
-}) {
+}, calendarId = 'primary') {
   const calendar = google.calendar({ version: 'v3', auth: connectedClient(store) })
   const { data } = await calendar.events.patch({
-    calendarId: 'primary',
+    calendarId,
     eventId,
     sendUpdates: input.attendees?.length ? 'all' : 'none',
     requestBody: {
@@ -93,9 +121,9 @@ export async function updateCalendarEvent(store: Store, eventId: string, input: 
   return { id: data.id, htmlLink: data.htmlLink }
 }
 
-export async function deleteCalendarEvent(store: Store, eventId: string) {
+export async function deleteCalendarEvent(store: Store, eventId: string, calendarId = 'primary') {
   const calendar = google.calendar({ version: 'v3', auth: connectedClient(store) })
-  await calendar.events.delete({ calendarId: 'primary', eventId, sendUpdates: 'none' })
+  await calendar.events.delete({ calendarId, eventId, sendUpdates: 'none' })
 }
 
 export async function createCalendarEvent(store: Store, input: {
@@ -105,10 +133,10 @@ export async function createCalendarEvent(store: Store, input: {
   description?: string
   location?: string
   attendees?: string[]
-}) {
+}, calendarId = 'primary') {
   const calendar = google.calendar({ version: 'v3', auth: connectedClient(store) })
   const { data } = await calendar.events.insert({
-    calendarId: 'primary',
+    calendarId,
     sendUpdates: input.attendees?.length ? 'all' : 'none',
     requestBody: {
       summary: input.title,
