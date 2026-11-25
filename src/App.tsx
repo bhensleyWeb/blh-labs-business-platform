@@ -1,23 +1,28 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import {
-  Building2, CalendarDays, Check, ChevronRight, CircleUserRound, FileText, FolderOpen,
+  Building2, CalendarDays, Check, ChevronRight, ExternalLink, FileText, FolderOpen,
   LayoutDashboard, LogOut, Menu, Plus, Search, Settings, UsersRound, X,
 } from 'lucide-react'
 import { api, ApiError } from './api'
+import { FreebuffCalendar, FreebuffLeads, FreebuffOverview } from './FreebuffAdmin'
 import type { Client, Platform, Theme } from './types'
 
 type Route = 'dashboard' | 'clients' | 'calendar' | 'drive' | 'documents' | 'settings'
 const routes: { id: Route; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-  { id: 'clients', label: 'CRM', icon: UsersRound },
-  { id: 'calendar', label: 'Schedule', icon: CalendarDays },
+  { id: 'clients', label: 'Leads & CRM', icon: UsersRound },
+  { id: 'calendar', label: 'Calendar', icon: CalendarDays },
   { id: 'drive', label: 'Drive', icon: FolderOpen },
   { id: 'documents', label: 'Documents', icon: FileText },
   { id: 'settings', label: 'Settings', icon: Settings },
 ]
 
+const basePath = '/optimize/back-office'
+const routePath = (route: Route) => route === 'dashboard' ? `${basePath}/` : `${basePath}/${route}`
+
 const routeFromLocation = (): Route => {
-  const value = location.pathname.split('/')[1] as Route
+  const relative = location.pathname.startsWith(basePath) ? location.pathname.slice(basePath.length) : location.pathname
+  const value = relative.split('/').filter(Boolean)[0] as Route
   return routes.some((route) => route.id === value) ? value : 'dashboard'
 }
 
@@ -42,11 +47,12 @@ function App() {
   }, [])
 
   const navigate = (next: Route) => {
-    history.pushState({}, '', next === 'dashboard' ? '/' : `/${next}`)
+    history.pushState({}, '', routePath(next))
     setRoute(next)
     setMobileOpen(false)
   }
 
+  if (!session && error) return <div className="splash"><div className="brand-mark">BLH</div><h2>Can’t reach the back office</h2><p>{error}</p><p>For local development, start the app with <code>npm run dev</code>, then open <code>http://localhost:5173/optimize/back-office/</code>.</p><button className="button primary" onClick={() => { setError(''); load().catch((err) => setError(err.message)) }}>Try again</button></div>
   if (!session) return <div className="splash"><div className="brand-mark">BLH</div><p>Opening your workspace…</p></div>
   if (!session.authenticated) return <Login onLogin={load} />
   if (!platform) return <div className="splash"><div className="spinner" /></div>
@@ -55,24 +61,33 @@ function App() {
     '--primary': platform.theme.primary,
     '--accent': platform.theme.accent,
     '--canvas': platform.theme.surface,
+    '--forest-950': platform.theme.primary,
+    '--sage': platform.theme.accent,
+    '--cream': platform.theme.surface,
   } as React.CSSProperties
 
   return (
-    <div className="app" style={themeStyle}>
-      <aside className={mobileOpen ? 'sidebar open' : 'sidebar'}>
-        <button className="mobile-close" onClick={() => setMobileOpen(false)}><X /></button>
-        <div className="brand"><div className="brand-mark">BLH</div><div><strong>{platform.theme.brandName}</strong><span>Back office</span></div></div>
-        <nav>{routes.map(({ id, label, icon: Icon }) => <button key={id} className={route === id ? 'active' : ''} onClick={() => navigate(id)}><Icon size={19} />{label}</button>)}</nav>
-        <div className="sidebar-foot"><CircleUserRound size={22} /><div><strong>Administrator</strong><span>{session.email}</span></div><button title="Sign out" onClick={async () => { await api('/auth/logout', { method: 'POST' }); location.href = '/' }}><LogOut size={18} /></button></div>
+    <div className="app admin-shell" style={themeStyle}>
+      <aside className={mobileOpen ? 'sidebar admin-sidebar open' : 'sidebar admin-sidebar'}>
+        <button className="mobile-close" type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)}><X /></button>
+        <div className="brand admin-brand"><AdminMark /><div><strong className="admin-brand__name">{platform.theme.brandName}</strong><span className="admin-brand__sub">Owner back office · BLH Labs</span></div></div>
+        <nav className="admin-nav"><span className="admin-nav__label">Workspace</span>{routes.map(({ id, label, icon: Icon }) => <button key={id} className={route === id ? 'admin-nav__link active' : 'admin-nav__link'} onClick={() => navigate(id)}><Icon size={16} />{label}</button>)}</nav>
+        <div className="admin-sidebar__foot">
+          <div className="admin-env"><span>Environment</span><span className={platform.google.connected ? 'badge-live' : 'badge-test'}>{platform.google.connected ? 'LIVE' : 'SETUP'}</span></div>
+          <div className="admin-env"><span>Package</span><span>Starter</span></div>
+          <a className="sidebar-site-link" href="/optimize/" target="_blank"><ExternalLink size={13} />Public site</a>
+          <div className="sidebar-foot admin-user"><span className="admin-user__avatar">BLH</span><div><strong className="admin-user__name">Administrator</strong><span className="admin-user__meta">{session.email}</span></div><button className="admin-user__logout" title="Sign out" onClick={async () => { await api('/auth/logout', { method: 'POST' }); location.href = routePath('dashboard') }}><LogOut size={15} /></button></div>
+        </div>
       </aside>
-      {mobileOpen && <button className="scrim" onClick={() => setMobileOpen(false)} />}
-      <main>
-        <header><button className="mobile-menu" onClick={() => setMobileOpen(true)}><Menu /></button><div><span className="eyebrow">BLH LABS / {routes.find((item) => item.id === route)?.label.toUpperCase()}</span><h1>{pageTitle(route)}</h1></div><LiveBadge connected={platform.google.connected} /></header>
+      {mobileOpen && <button className="scrim" type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />}
+      <main className="admin-main">
+        <header className="admin-topbar"><button className="mobile-menu" type="button" aria-label="Open navigation" onClick={() => setMobileOpen(true)}><Menu /></button><div className="admin-crumbs"><span>BLH Labs</span><span>/</span><span>{platform.theme.brandName}</span><span>/</span><strong>{routes.find((item) => item.id === route)?.label}</strong></div><div className="admin-topbar__actions"><span className="demo-context">Demo customer #BLH-0001</span><LiveBadge connected={platform.google.connected} /></div></header>
         {error && <div className="notice error">{error}<button onClick={() => setError('')}><X size={15} /></button></div>}
-        <div className="content">
-          {route === 'dashboard' && <Dashboard platform={platform} navigate={navigate} />}
-          {route === 'clients' && <Crm platform={platform} refresh={load} onError={setError} />}
-          {route === 'calendar' && <Calendar connected={platform.google.connected} clients={platform.clients} onError={setError} />}
+        <div className="content admin-content">
+          {route !== 'dashboard' && route !== 'clients' && route !== 'calendar' && <div className="admin-pagehead"><div><h1>{pageTitle(route)}</h1><p className="admin-pagehead__sub">{pageSubtitle(route, platform.google.connected)}</p></div></div>}
+          {route === 'dashboard' && <FreebuffOverview platform={platform} navigate={navigate} />}
+          {route === 'clients' && <FreebuffLeads platform={platform} refresh={load} onError={setError} />}
+          {route === 'calendar' && <FreebuffCalendar connected={platform.google.connected} clients={platform.clients} onError={setError} />}
           {route === 'drive' && <Drive connected={platform.google.connected} clients={platform.clients} refresh={load} onError={setError} />}
           {route === 'documents' && <Documents connected={platform.google.connected} clients={platform.clients} onError={setError} />}
           {route === 'settings' && <SettingsPage platform={platform} refresh={load} onError={setError} />}
@@ -83,7 +98,16 @@ function App() {
 }
 
 function pageTitle(route: Route) {
-  return ({ dashboard: 'Good work starts here.', clients: 'Relationships, organized.', calendar: 'Make time count.', drive: 'Everything in its place.', documents: 'Proposals that move.', settings: 'Make it yours.' })[route]
+  return ({ dashboard: 'Good morning, Cedar & Stone.', clients: 'Leads & CRM', calendar: 'Calendar', drive: 'Google Drive', documents: 'Proposals & documents', settings: 'Workspace settings' })[route]
+}
+
+function pageSubtitle(route: Route, connected: boolean) {
+  const google = connected ? 'Your Google Workspace connection is live.' : 'Connect Google Workspace in Settings to activate live tools.'
+  return ({ dashboard: `A quick read on clients, pipeline, and connected tools. ${google}`, clients: 'Manage every customer relationship, opportunity, and follow-up in one place.', calendar: `Schedule and review appointments from your primary Google Calendar. ${google}`, drive: `Browse real files and create customer folders in Google Drive. ${google}`, documents: `Create client proposals as real Google Docs. ${google}`, settings: 'Manage branding, Google Workspace authorization, and service tiers.' })[route]
+}
+
+function AdminMark() {
+  return <span className="admin-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="currentColor" /><path d="M20 31V18" stroke="#12241a" strokeWidth="2.4" strokeLinecap="round" /><path d="M20 21c-5 0-8.5-2.8-8.5-7.8 5-.7 8.5 2.8 8.5 7.8Z" fill="#12241a" /><path d="M20 18c.7-4.9 4.2-7.8 9.1-7.8 0 5-3.5 7.8-9.1 7.8Z" fill="#17321f" /><path d="M11 31h18" stroke="#12241a" strokeWidth="2.4" strokeLinecap="round" /></svg></span>
 }
 
 function Login({ onLogin }: { onLogin: () => Promise<void> }) {

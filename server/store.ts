@@ -19,6 +19,10 @@ export const initialData = (): PlatformData => ({
       status: 'active',
       isDemo: true,
       notes: 'Demo customer seeded for product evaluation. Replace or archive before production onboarding.',
+      service: 'Landscape Design',
+      city: '',
+      source: 'BLH Labs demo',
+      followUpDate: null,
       createdAt: now(),
       updatedAt: now(),
     },
@@ -77,7 +81,7 @@ export class Store {
     return this.writeQueue
   }
 
-  async createClient(input: Pick<Client, 'name' | 'email' | 'phone' | 'tierId' | 'status' | 'notes'>) {
+  async createClient(input: Pick<Client, 'name' | 'email' | 'phone' | 'tierId' | 'status' | 'notes' | 'service' | 'city' | 'source' | 'followUpDate'>) {
     const stamp = now()
     const client: Client = {
       ...input,
@@ -99,6 +103,16 @@ export class Store {
     Object.assign(client, patch, { updatedAt: now() })
     await this.persist()
     return client
+  }
+
+  async deleteClient(id: string) {
+    const index = this.data.clients.findIndex((item) => item.id === id)
+    if (index < 0) return false
+    this.data.clients.splice(index, 1)
+    this.data.activities = this.data.activities.filter((item) => item.clientId !== id)
+    this.data.opportunities = this.data.opportunities.filter((item) => item.clientId !== id)
+    await this.persist()
+    return true
   }
 
   async addActivity(input: Omit<Activity, 'id' | 'occurredAt'>) {

@@ -25,4 +25,15 @@ describe('Store', () => {
     const saved = JSON.parse(await readFile(path, 'utf8'))
     assert.equal(saved.clients.length, 2)
   })
+
+  it('updates and removes editable CRM lead fields', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'blh-store-'))
+    const store = await new Store(join(directory, 'platform.json')).init()
+    const client = await store.createClient({ name: 'Editable Lead', email: 'lead@example.com', phone: '', tierId: 'starter', status: 'new', notes: '', service: 'Landscape Design', city: 'Miami', source: 'Website form', followUpDate: '2026-11-30' })
+    const updated = await store.updateClient(client.id, { status: 'contacted', notes: 'Called and left a message.', followUpDate: '2026-12-02' })
+    assert.equal(updated?.status, 'contacted')
+    assert.equal(updated?.followUpDate, '2026-12-02')
+    assert.equal(await store.deleteClient(client.id), true)
+    assert.equal(store.snapshot().clients.some((item) => item.id === client.id), false)
+  })
 })

@@ -63,8 +63,39 @@ export async function listCalendarEvents(store: Store, timeMin: string, timeMax:
     start: event.start?.dateTime || event.start?.date,
     end: event.end?.dateTime || event.end?.date,
     location: event.location || '',
+    description: event.description || '',
     htmlLink: event.htmlLink,
   }))
+}
+
+export async function updateCalendarEvent(store: Store, eventId: string, input: {
+  title: string
+  start: string
+  end: string
+  description?: string
+  location?: string
+  attendees?: string[]
+}) {
+  const calendar = google.calendar({ version: 'v3', auth: connectedClient(store) })
+  const { data } = await calendar.events.patch({
+    calendarId: 'primary',
+    eventId,
+    sendUpdates: input.attendees?.length ? 'all' : 'none',
+    requestBody: {
+      summary: input.title,
+      description: input.description,
+      location: input.location,
+      start: { dateTime: input.start },
+      end: { dateTime: input.end },
+      attendees: input.attendees?.map((email) => ({ email })),
+    },
+  })
+  return { id: data.id, htmlLink: data.htmlLink }
+}
+
+export async function deleteCalendarEvent(store: Store, eventId: string) {
+  const calendar = google.calendar({ version: 'v3', auth: connectedClient(store) })
+  await calendar.events.delete({ calendarId: 'primary', eventId, sendUpdates: 'none' })
 }
 
 export async function createCalendarEvent(store: Store, input: {
@@ -72,6 +103,7 @@ export async function createCalendarEvent(store: Store, input: {
   start: string
   end: string
   description?: string
+  location?: string
   attendees?: string[]
 }) {
   const calendar = google.calendar({ version: 'v3', auth: connectedClient(store) })
@@ -81,6 +113,7 @@ export async function createCalendarEvent(store: Store, input: {
     requestBody: {
       summary: input.title,
       description: input.description,
+      location: input.location,
       start: { dateTime: input.start },
       end: { dateTime: input.end },
       attendees: input.attendees?.map((email) => ({ email })),

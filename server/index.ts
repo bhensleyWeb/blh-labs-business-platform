@@ -7,6 +7,7 @@ import helmet from 'helmet'
 import { z } from 'zod'
 import {
   createCalendarEvent,
+  deleteCalendarEvent,
   createClientFolder,
   createProposal,
   googleConfigured,
@@ -16,6 +17,7 @@ import {
   listDriveFiles,
   oauthClient,
   saveAuthorization,
+  updateCalendarEvent,
 } from './google.ts'
 import { createSession, randomState, readCookies, requireAuth, safeEqual, sessionCookie, sessionEmail, transientCookie } from './security.ts'
 import { Store } from './store.ts'
@@ -85,8 +87,12 @@ const clientSchema = z.object({
   email: z.string().email(),
   phone: z.string().default(''),
   tierId: z.string().min(1),
-  status: z.enum(['lead', 'active', 'paused', 'archived']).default('lead'),
+  status: z.enum(['new', 'contacted', 'consultation', 'estimate', 'won', 'lost', 'lead', 'active', 'paused', 'archived']).default('new'),
   notes: z.string().default(''),
+  service: z.string().default(''),
+  city: z.string().default(''),
+  source: z.string().default('Manual entry'),
+  followUpDate: z.string().nullable().default(null),
 })
 
 app.post('/api/clients', async (req, res, next) => {
@@ -103,6 +109,14 @@ app.patch('/api/clients/:id', async (req, res, next) => {
     const client = await store.updateClient(req.params.id, patch)
     if (!client) return res.status(404).json({ error: 'Client not found' })
     res.json(client)
+  } catch (error) { next(error) }
+})
+
+app.delete('/api/clients/:id', async (req, res, next) => {
+  try {
+    const deleted = await store.deleteClient(req.params.id)
+    if (!deleted) return res.status(404).json({ error: 'Client not found' })
+    res.status(204).end()
   } catch (error) { next(error) }
 })
 
@@ -174,9 +188,28 @@ app.get('/api/calendar/events', async (req, res, next) => {
 
 app.post('/api/calendar/events', async (req, res, next) => {
   try {
-    const input = z.object({ title: z.string().min(1), start: z.string().datetime(), end: z.string().datetime(), description: z.string().optional(), attendees: z.array(z.string().email()).optional() }).parse(req.body)
+    const input = z.object({ title: z.string().min(1), start: z.string().datetime(), end: z.string().datetime(), description: z.string().optional(), location: z.string().optional(), attendees: z.array(z.string().email()).optional() }).parse(req.body)
     res.status(201).json(await createCalendarEvent(store, input))
   } catch (error) { next(error) }
+})
+
+const calendarEventSchema = z.object({
+  title: z.string().min(1),
+  start: z.string().datetime(),
+  end: z.string().datetime(),
+  description: z.string().optional(),
+  location: z.string().optional(),
+  attendees: z.array(z.string().email()).optional(),
+})
+
+app.patch('/api/calendar/events/:id', async (req, res, next) => {
+  try { res.json(await updateCalendarEvent(store, req.params.id, calendarEventSchema.parse(req.body))) }
+  catch (error) { next(error) }
+})
+
+app.delete('/api/calendar/events/:id', async (req, res, next) => {
+  try { await deleteCalendarEvent(store, req.params.id); res.status(204).end() }
+  catch (error) { next(error) }
 })
 
 app.get('/api/drive/files', async (req, res, next) => {
@@ -212,8 +245,9 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
 
 const dist = resolve('dist')
 if (existsSync(dist)) {
-  app.use(express.static(dist))
-  app.get('/{*splat}', (_req, res) => res.sendFile(resolve(dist, 'index.html')))
+  const backOfficePath = '/optimize/back-office'
+  app.use(backOfficePath, express.static(dist))
+  app.get(`${backOfficePath}/{*splat}`, (_req, res) => res.sendFile(resolve(dist, 'index.html')))
 }
 
 if (process.env.NODE_ENV !== 'test') app.listen(port, () => console.log(`BLH Labs API listening on http://localhost:${port}`))

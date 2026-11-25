@@ -8,9 +8,11 @@
     "dev:web": "vite --configLoader runner",
     "dev:server": "node --watch --experimental-strip-types server/index.ts",
     "build": "tsc -b && tsc -p tsconfig.build-server.json && vite build --configLoader runner",
+    "deploy:website": "npm run build && node scripts/deploy-website.mjs",
     "start": "node dist-server/index.js",
     "test": "node --test --experimental-strip-types server/store.test.ts",
-    "check": "npm run test && npm run build"
+    "check": "npm run test && npm run build",
+    "preview": "vite preview --configLoader runner"
   },
   "dependencies": {
     "dotenv": "^16.4.7",

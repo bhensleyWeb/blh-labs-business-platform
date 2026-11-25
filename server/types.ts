@@ -13,10 +13,14 @@ export type Client = {
   email: string
   phone: string
   tierId: string
-  status: 'lead' | 'active' | 'paused' | 'archived'
+  status: 'new' | 'contacted' | 'consultation' | 'estimate' | 'won' | 'lost' | 'lead' | 'active' | 'paused' | 'archived'
   isDemo: boolean
   driveFolderId?: string
   notes: string
+  service?: string
+  city?: string
+  source?: string
+  followUpDate?: string | null
   createdAt: string
   updatedAt: string
 }
