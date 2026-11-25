@@ -19,10 +19,13 @@ export const initialData = (): PlatformData => ({
       status: 'active',
       isDemo: true,
       notes: 'Demo customer seeded for product evaluation. Replace or archive before production onboarding.',
+<<<<<<< HEAD
       service: 'Landscape Design',
       city: '',
       source: 'BLH Labs demo',
       followUpDate: null,
+=======
+>>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
       createdAt: now(),
       updatedAt: now(),
     },
@@ -81,7 +84,11 @@ export class Store {
     return this.writeQueue
   }
 
+<<<<<<< HEAD
   async createClient(input: Pick<Client, 'name' | 'email' | 'phone' | 'tierId' | 'status' | 'notes' | 'service' | 'city' | 'source' | 'followUpDate'>) {
+=======
+  async createClient(input: Pick<Client, 'name' | 'email' | 'phone' | 'tierId' | 'status' | 'notes'>) {
+>>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
     const stamp = now()
     const client: Client = {
       ...input,
@@ -105,6 +112,7 @@ export class Store {
     return client
   }
 
+<<<<<<< HEAD
   async deleteClient(id: string) {
     const index = this.data.clients.findIndex((item) => item.id === id)
     if (index < 0) return false
@@ -115,6 +123,8 @@ export class Store {
     return true
   }
 
+=======
+>>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
   async addActivity(input: Omit<Activity, 'id' | 'occurredAt'>) {
     const activity = { ...input, id: randomUUID(), occurredAt: now() }
     this.data.activities.unshift(activity)

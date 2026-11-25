@@ -25,6 +25,7 @@ describe('Store', () => {
     const saved = JSON.parse(await readFile(path, 'utf8'))
     assert.equal(saved.clients.length, 2)
   })
+<<<<<<< HEAD
 
   it('updates and removes editable CRM lead fields', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'blh-store-'))
@@ -36,4 +37,6 @@ describe('Store', () => {
     assert.equal(await store.deleteClient(client.id), true)
     assert.equal(store.snapshot().clients.some((item) => item.id === client.id), false)
   })
+=======
+>>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
 })

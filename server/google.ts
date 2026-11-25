@@ -63,11 +63,15 @@ export async function listCalendarEvents(store: Store, timeMin: string, timeMax:
     start: event.start?.dateTime || event.start?.date,
     end: event.end?.dateTime || event.end?.date,
     location: event.location || '',
+<<<<<<< HEAD
     description: event.description || '',
+=======
+>>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
     htmlLink: event.htmlLink,
   }))
 }
 
+<<<<<<< HEAD
 export async function updateCalendarEvent(store: Store, eventId: string, input: {
   title: string
   start: string
@@ -98,12 +102,17 @@ export async function deleteCalendarEvent(store: Store, eventId: string) {
   await calendar.events.delete({ calendarId: 'primary', eventId, sendUpdates: 'none' })
 }
 
+=======
+>>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
 export async function createCalendarEvent(store: Store, input: {
   title: string
   start: string
   end: string
   description?: string
+<<<<<<< HEAD
   location?: string
+=======
+>>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
   attendees?: string[]
 }) {
   const calendar = google.calendar({ version: 'v3', auth: connectedClient(store) })
@@ -113,7 +122,10 @@ export async function createCalendarEvent(store: Store, input: {
     requestBody: {
       summary: input.title,
       description: input.description,
+<<<<<<< HEAD
       location: input.location,
+=======
+>>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
       start: { dateTime: input.start },
       end: { dateTime: input.end },
       attendees: input.attendees?.map((email) => ({ email })),
