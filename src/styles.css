@@ -64,7 +64,6 @@ header h1 { font-family: 'Fraunces', Georgia, serif; font-size: clamp(25px, 3vw,
 @media (max-width: 650px) {
   main > header { height: 95px; }.live-badge { font-size: 0; padding: 9px; }.hero-card { align-items: flex-start; flex-direction: column; }.metrics { grid-template-columns: 1fr; }.metric + .metric { border-left: 0; border-top: 1px solid #e5dfd5; }.table-head { display: none; }.table-row { grid-template-columns: 1fr auto; gap: 10px; }.table-row > span:last-child { display: none; }.form-grid, .theme-form { grid-template-columns: 1fr; }.form-grid label { grid-column: 1 !important; }.theme-form .colors { grid-column: 1; grid-template-columns: 1fr; }.connection-card { align-items: flex-start; flex-direction: column; }.toolbar { align-items: stretch; }.search { min-width: 0; flex: 1; }.document-layout .doc-preview { display: none; }.login-story h1 { font-size: 45px; }.login-card { padding: 30px; }.drive-grid { grid-template-columns: 1fr; }.client-summary { grid-template-columns: 1fr 1fr; }.inline-form, .inline-form.activity-form { grid-template-columns: 1fr; }
 }
-<<<<<<< HEAD
 
 /* Freebuff owner back-office visual system ---------------- */
 :root {
@@ -189,5 +188,3 @@ body { background: var(--cream); color: var(--ink); font-family: var(--sans); }
   .metrics { grid-template-columns: 1fr; }
   .metric + .metric { border-top: 1px solid #e4dfd2; }
 }
-=======
->>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371

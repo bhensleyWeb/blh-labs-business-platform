@@ -7,10 +7,7 @@ import helmet from 'helmet'
 import { z } from 'zod'
 import {
   createCalendarEvent,
-<<<<<<< HEAD
   deleteCalendarEvent,
-=======
->>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
   createClientFolder,
   createProposal,
   googleConfigured,
@@ -20,10 +17,7 @@ import {
   listDriveFiles,
   oauthClient,
   saveAuthorization,
-<<<<<<< HEAD
   updateCalendarEvent,
-=======
->>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
 } from './google.ts'
 import { createSession, randomState, readCookies, requireAuth, safeEqual, sessionCookie, sessionEmail, transientCookie } from './security.ts'
 import { Store } from './store.ts'
@@ -93,17 +87,12 @@ const clientSchema = z.object({
   email: z.string().email(),
   phone: z.string().default(''),
   tierId: z.string().min(1),
-<<<<<<< HEAD
   status: z.enum(['new', 'contacted', 'consultation', 'estimate', 'won', 'lost', 'lead', 'active', 'paused', 'archived']).default('new'),
   notes: z.string().default(''),
   service: z.string().default(''),
   city: z.string().default(''),
   source: z.string().default('Manual entry'),
   followUpDate: z.string().nullable().default(null),
-=======
-  status: z.enum(['lead', 'active', 'paused', 'archived']).default('lead'),
-  notes: z.string().default(''),
->>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
 })
 
 app.post('/api/clients', async (req, res, next) => {
@@ -123,7 +112,6 @@ app.patch('/api/clients/:id', async (req, res, next) => {
   } catch (error) { next(error) }
 })
 
-<<<<<<< HEAD
 app.delete('/api/clients/:id', async (req, res, next) => {
   try {
     const deleted = await store.deleteClient(req.params.id)
@@ -132,8 +120,6 @@ app.delete('/api/clients/:id', async (req, res, next) => {
   } catch (error) { next(error) }
 })
 
-=======
->>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
 app.post('/api/clients/:id/activities', async (req, res, next) => {
   try {
     if (!store.snapshot().clients.some((client) => client.id === req.params.id)) return res.status(404).json({ error: 'Client not found' })
@@ -202,16 +188,11 @@ app.get('/api/calendar/events', async (req, res, next) => {
 
 app.post('/api/calendar/events', async (req, res, next) => {
   try {
-<<<<<<< HEAD
     const input = z.object({ title: z.string().min(1), start: z.string().datetime(), end: z.string().datetime(), description: z.string().optional(), location: z.string().optional(), attendees: z.array(z.string().email()).optional() }).parse(req.body)
-=======
-    const input = z.object({ title: z.string().min(1), start: z.string().datetime(), end: z.string().datetime(), description: z.string().optional(), attendees: z.array(z.string().email()).optional() }).parse(req.body)
->>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
     res.status(201).json(await createCalendarEvent(store, input))
   } catch (error) { next(error) }
 })
 
-<<<<<<< HEAD
 const calendarEventSchema = z.object({
   title: z.string().min(1),
   start: z.string().datetime(),
@@ -231,8 +212,6 @@ app.delete('/api/calendar/events/:id', async (req, res, next) => {
   catch (error) { next(error) }
 })
 
-=======
->>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
 app.get('/api/drive/files', async (req, res, next) => {
   try { res.json(await listDriveFiles(store, typeof req.query.folderId === 'string' ? req.query.folderId : undefined)) }
   catch (error) { next(error) }
@@ -266,14 +245,9 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
 
 const dist = resolve('dist')
 if (existsSync(dist)) {
-<<<<<<< HEAD
   const backOfficePath = '/optimize/back-office'
   app.use(backOfficePath, express.static(dist))
   app.get(`${backOfficePath}/{*splat}`, (_req, res) => res.sendFile(resolve(dist, 'index.html')))
-=======
-  app.use(express.static(dist))
-  app.get('/{*splat}', (_req, res) => res.sendFile(resolve(dist, 'index.html')))
->>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
 }
 
 if (process.env.NODE_ENV !== 'test') app.listen(port, () => console.log(`BLH Labs API listening on http://localhost:${port}`))

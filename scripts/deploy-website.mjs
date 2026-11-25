@@ -11,6 +11,7 @@ const builtHtaccess = resolve(distRoot, '.htaccess')
 const websiteIndex = resolve(projectRoot, 'index.html')
 const websiteAssets = resolve(projectRoot, 'assets')
 const websiteHtaccess = resolve(projectRoot, '.htaccess')
+const routeDirectories = ['clients', 'calendar', 'drive', 'documents', 'settings']
 
 await access(builtIndex, constants.R_OK)
 await access(builtAssets, constants.R_OK)
@@ -20,6 +21,14 @@ await access(builtHtaccess, constants.R_OK)
 await mkdir(websiteAssets, { recursive: true })
 await cp(builtAssets, websiteAssets, { recursive: true, force: true })
 await copyFile(builtHtaccess, websiteHtaccess)
+
+// Static servers such as VS Code Live Server need a real index for each route.
+for (const route of routeDirectories) {
+  const routeDirectory = resolve(projectRoot, route)
+  await mkdir(routeDirectory, { recursive: true })
+  await copyFile(builtIndex, resolve(routeDirectory, 'index.html'))
+}
+
 await copyFile(builtIndex, websiteIndex)
 
-console.log('Published dist/index.html, dist/assets, and dist/.htaccess to optimize/back-office.')
+console.log('Published the back-office homepage, route pages, assets, and routing rules to optimize/back-office.')

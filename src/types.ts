@@ -5,7 +5,6 @@ export type Client = {
   email: string
   phone: string
   tierId: string
-<<<<<<< HEAD
   status: 'new' | 'contacted' | 'consultation' | 'estimate' | 'won' | 'lost' | 'lead' | 'active' | 'paused' | 'archived'
   isDemo: boolean
   driveFolderId?: string
@@ -14,12 +13,6 @@ export type Client = {
   city?: string
   source?: string
   followUpDate?: string | null
-=======
-  status: 'lead' | 'active' | 'paused' | 'archived'
-  isDemo: boolean
-  driveFolderId?: string
-  notes: string
->>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
   createdAt: string
   updatedAt: string
 }

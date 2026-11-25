@@ -1,45 +1,28 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import {
-<<<<<<< HEAD
   Building2, CalendarDays, Check, ChevronRight, ExternalLink, FileText, FolderOpen,
   LayoutDashboard, LogOut, Menu, Plus, Search, Settings, UsersRound, X,
 } from 'lucide-react'
 import { api, ApiError } from './api'
 import { FreebuffCalendar, FreebuffLeads, FreebuffOverview } from './FreebuffAdmin'
-=======
-  Building2, CalendarDays, Check, ChevronRight, CircleUserRound, FileText, FolderOpen,
-  LayoutDashboard, LogOut, Menu, Plus, Search, Settings, UsersRound, X,
-} from 'lucide-react'
-import { api, ApiError } from './api'
->>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
 import type { Client, Platform, Theme } from './types'
 
 type Route = 'dashboard' | 'clients' | 'calendar' | 'drive' | 'documents' | 'settings'
 const routes: { id: Route; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-<<<<<<< HEAD
   { id: 'clients', label: 'Leads & CRM', icon: UsersRound },
   { id: 'calendar', label: 'Calendar', icon: CalendarDays },
-=======
-  { id: 'clients', label: 'CRM', icon: UsersRound },
-  { id: 'calendar', label: 'Schedule', icon: CalendarDays },
->>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
   { id: 'drive', label: 'Drive', icon: FolderOpen },
   { id: 'documents', label: 'Documents', icon: FileText },
   { id: 'settings', label: 'Settings', icon: Settings },
 ]
 
-<<<<<<< HEAD
 const basePath = '/optimize/back-office'
 const routePath = (route: Route) => route === 'dashboard' ? `${basePath}/` : `${basePath}/${route}`
 
 const routeFromLocation = (): Route => {
   const relative = location.pathname.startsWith(basePath) ? location.pathname.slice(basePath.length) : location.pathname
   const value = relative.split('/').filter(Boolean)[0] as Route
-=======
-const routeFromLocation = (): Route => {
-  const value = location.pathname.split('/')[1] as Route
->>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
   return routes.some((route) => route.id === value) ? value : 'dashboard'
 }
 
@@ -64,19 +47,12 @@ function App() {
   }, [])
 
   const navigate = (next: Route) => {
-<<<<<<< HEAD
     history.pushState({}, '', routePath(next))
-=======
-    history.pushState({}, '', next === 'dashboard' ? '/' : `/${next}`)
->>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
     setRoute(next)
     setMobileOpen(false)
   }
 
-<<<<<<< HEAD
   if (!session && error) return <div className="splash"><div className="brand-mark">BLH</div><h2>Can’t reach the back office</h2><p>{error}</p><p>For local development, start the app with <code>npm run dev</code>, then open <code>http://localhost:5173/optimize/back-office/</code>.</p><button className="button primary" onClick={() => { setError(''); load().catch((err) => setError(err.message)) }}>Try again</button></div>
-=======
->>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
   if (!session) return <div className="splash"><div className="brand-mark">BLH</div><p>Opening your workspace…</p></div>
   if (!session.authenticated) return <Login onLogin={load} />
   if (!platform) return <div className="splash"><div className="spinner" /></div>
@@ -85,7 +61,6 @@ function App() {
     '--primary': platform.theme.primary,
     '--accent': platform.theme.accent,
     '--canvas': platform.theme.surface,
-<<<<<<< HEAD
     '--forest-950': platform.theme.primary,
     '--sage': platform.theme.accent,
     '--cream': platform.theme.surface,
@@ -113,26 +88,6 @@ function App() {
           {route === 'dashboard' && <FreebuffOverview platform={platform} navigate={navigate} />}
           {route === 'clients' && <FreebuffLeads platform={platform} refresh={load} onError={setError} />}
           {route === 'calendar' && <FreebuffCalendar connected={platform.google.connected} clients={platform.clients} onError={setError} />}
-=======
-  } as React.CSSProperties
-
-  return (
-    <div className="app" style={themeStyle}>
-      <aside className={mobileOpen ? 'sidebar open' : 'sidebar'}>
-        <button className="mobile-close" onClick={() => setMobileOpen(false)}><X /></button>
-        <div className="brand"><div className="brand-mark">BLH</div><div><strong>{platform.theme.brandName}</strong><span>Back office</span></div></div>
-        <nav>{routes.map(({ id, label, icon: Icon }) => <button key={id} className={route === id ? 'active' : ''} onClick={() => navigate(id)}><Icon size={19} />{label}</button>)}</nav>
-        <div className="sidebar-foot"><CircleUserRound size={22} /><div><strong>Administrator</strong><span>{session.email}</span></div><button title="Sign out" onClick={async () => { await api('/auth/logout', { method: 'POST' }); location.href = '/' }}><LogOut size={18} /></button></div>
-      </aside>
-      {mobileOpen && <button className="scrim" onClick={() => setMobileOpen(false)} />}
-      <main>
-        <header><button className="mobile-menu" onClick={() => setMobileOpen(true)}><Menu /></button><div><span className="eyebrow">BLH LABS / {routes.find((item) => item.id === route)?.label.toUpperCase()}</span><h1>{pageTitle(route)}</h1></div><LiveBadge connected={platform.google.connected} /></header>
-        {error && <div className="notice error">{error}<button onClick={() => setError('')}><X size={15} /></button></div>}
-        <div className="content">
-          {route === 'dashboard' && <Dashboard platform={platform} navigate={navigate} />}
-          {route === 'clients' && <Crm platform={platform} refresh={load} onError={setError} />}
-          {route === 'calendar' && <Calendar connected={platform.google.connected} clients={platform.clients} onError={setError} />}
->>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
           {route === 'drive' && <Drive connected={platform.google.connected} clients={platform.clients} refresh={load} onError={setError} />}
           {route === 'documents' && <Documents connected={platform.google.connected} clients={platform.clients} onError={setError} />}
           {route === 'settings' && <SettingsPage platform={platform} refresh={load} onError={setError} />}
@@ -143,7 +98,6 @@ function App() {
 }
 
 function pageTitle(route: Route) {
-<<<<<<< HEAD
   return ({ dashboard: 'Good morning, Cedar & Stone.', clients: 'Leads & CRM', calendar: 'Calendar', drive: 'Google Drive', documents: 'Proposals & documents', settings: 'Workspace settings' })[route]
 }
 
@@ -154,9 +108,6 @@ function pageSubtitle(route: Route, connected: boolean) {
 
 function AdminMark() {
   return <span className="admin-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="currentColor" /><path d="M20 31V18" stroke="#12241a" strokeWidth="2.4" strokeLinecap="round" /><path d="M20 21c-5 0-8.5-2.8-8.5-7.8 5-.7 8.5 2.8 8.5 7.8Z" fill="#12241a" /><path d="M20 18c.7-4.9 4.2-7.8 9.1-7.8 0 5-3.5 7.8-9.1 7.8Z" fill="#17321f" /><path d="M11 31h18" stroke="#12241a" strokeWidth="2.4" strokeLinecap="round" /></svg></span>
-=======
-  return ({ dashboard: 'Good work starts here.', clients: 'Relationships, organized.', calendar: 'Make time count.', drive: 'Everything in its place.', documents: 'Proposals that move.', settings: 'Make it yours.' })[route]
->>>>>>> 6c5bc3096047e3b6e90d82fabffca3eb5bc68371
 }
 
 function Login({ onLogin }: { onLogin: () => Promise<void> }) {
